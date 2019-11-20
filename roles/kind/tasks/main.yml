@@ -1,0 +1,9 @@
+---
+- name: configure kind
+  include: kind.yml
+
+- name: configure network
+  include: network.yml
+
+- name: configure kubedb
+  include: kubedb.yml

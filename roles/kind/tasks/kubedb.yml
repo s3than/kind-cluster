@@ -1,0 +1,68 @@
+---
+- name: Create a k8s namespace
+  k8s:
+    name: kubedb
+    api_version: v1
+    kind: Namespace
+    state: present
+
+# Just get rid of it
+# - name: Remove KubeDB Operator
+#   helm_cli:
+#     binary_path: helm3
+#     state: absent
+#     name: kubedb
+#     namespace: kubedb
+
+# - name: Check for pod creation
+#   command:
+#     argv:
+#       - helm3
+#       - uninstall
+#       - -n kubedb
+#       - kubedb
+
+# - name: Wait for refresh
+#   wait_for:
+#     timeout: 5
+
+- name: Install KubeDB Operator
+  helm_cli:
+    chart_repo_url: https://charts.appscode.com/stable
+    chart_ref: kubedb
+    binary_path: helm
+    chart_version: 0.12.0
+    state: present
+    name: kubedb
+    namespace: kubedb
+    values:
+      enableAnalytics: false
+
+- name: Every update triggers a new tls for kubedb
+  command:
+    argv:
+      - kubectl
+      - delete
+      - pods
+      - -n=kubedb
+      - -l app=kubedb
+
+- name: Let's wait for it to be happy again
+  k8s_facts:
+    kind: Pod
+    namespace: kubedb
+    label_selectors:
+      - app = kubedb
+  register: pods_output
+  until: "pods_output.resources[0].status.containerStatuses[0].ready != false"
+
+- name: Install KubeDB Catalog
+  helm_cli:
+    chart_repo_url: https://charts.appscode.com/stable
+    chart_ref: kubedb-catalog
+    binary_path: helm
+    chart_version: 0.12.0
+    state: present
+    namespace: kubedb
+    name: kubedb-catalog
+  until: "pods_output.resources[0].status.containerStatuses[0].ready != false"

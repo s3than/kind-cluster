@@ -1,0 +1,20 @@
+- name: Download Calico
+  get_url:
+    url: https://docs.projectcalico.org/v3.8/manifests/calico.yaml
+    dest: /tmp/calico.yml
+
+- name: Install Calico
+  k8s:
+    name: kubedb
+    src: /tmp/calico.yml
+    state: present
+
+- name: Run kubectl set env
+  command:
+    argv:
+    - kubectl
+    - -n=kube-system
+    - set
+    - env
+    - daemonset/calico-node
+    - FELIX_IGNORELOOSERPF=true
