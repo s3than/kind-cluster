@@ -5,5 +5,11 @@
 - name: configure network
   include: network.yml
 
+- name: configure consul
+  include: consul.yml
+
 - name: configure kubedb
   include: kubedb.yml
+
+- name: configure monitoring
+  include: monitoring.yml

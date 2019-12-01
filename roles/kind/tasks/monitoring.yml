@@ -1,0 +1,36 @@
+- name: Wait for kube-system to be ready
+  k8s_info:
+    kind: Pod
+    namespace: kube-system
+  register: pods_output
+  retries: 20
+  delay: 45
+  until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
+
+- name: Create a k8s namespace
+  k8s:
+    name: ca-system
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Install Prometheus Operator
+  helm_cli:
+    chart_ref: stable/prometheus-operator
+    binary_path: helm
+    update_repo_cache: true
+    chart_version: 8.2.4
+    state: present
+    namespace: ca-system
+    name: ca-prometheus
+  until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
+
+- name: Install Prometheus Adapter
+  helm_cli:
+    chart_ref: stable/prometheus-adapter
+    binary_path: helm
+    update_repo_cache: true
+    chart_version: 1.4.0
+    state: present
+    namespace: ca-system
+    name: ca-prometheus-adapter

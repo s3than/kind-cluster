@@ -1,30 +1,19 @@
 ---
 - name: Create a k8s namespace
   k8s:
-    name: kubedb
+    name: ca-system
     api_version: v1
     kind: Namespace
     state: present
 
-# Just get rid of it
-# - name: Remove KubeDB Operator
-#   helm_cli:
-#     binary_path: helm3
-#     state: absent
-#     name: kubedb
-#     namespace: kubedb
-
-# - name: Check for pod creation
-#   command:
-#     argv:
-#       - helm3
-#       - uninstall
-#       - -n kubedb
-#       - kubedb
-
-# - name: Wait for refresh
-#   wait_for:
-#     timeout: 5
+- name: Wait for kube-system to be ready
+  k8s_info:
+    kind: Pod
+    namespace: kube-system
+  register: pods_output
+  retries: 20
+  delay: 45
+  until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
 
 - name: Install KubeDB Operator
   helm_cli:
@@ -34,7 +23,7 @@
     chart_version: 0.12.0
     state: present
     name: kubedb
-    namespace: kubedb
+    namespace: ca-system
     values:
       enableAnalytics: false
 
@@ -44,17 +33,17 @@
       - kubectl
       - delete
       - pods
-      - -n=kubedb
+      - -n=ca-system
       - -l app=kubedb
 
-- name: Let's wait for it to be happy again
-  k8s_facts:
+- name: Wait for kubedb to be ready
+  k8s_info:
     kind: Pod
-    namespace: kubedb
-    label_selectors:
-      - app = kubedb
+    namespace: ca-system
   register: pods_output
-  until: "pods_output.resources[0].status.containerStatuses[0].ready != false"
+  retries: 8
+  delay: 10
+  until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
 
 - name: Install KubeDB Catalog
   helm_cli:
@@ -63,6 +52,7 @@
     binary_path: helm
     chart_version: 0.12.0
     state: present
-    namespace: kubedb
+    namespace: ca-system
     name: kubedb-catalog
-  until: "pods_output.resources[0].status.containerStatuses[0].ready != false"
+  until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
+

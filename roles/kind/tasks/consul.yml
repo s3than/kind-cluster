@@ -1,0 +1,87 @@
+# - name: Download Consul
+#   unarchive:
+#     src: https://github.com/hashicorp/consul-helm/archive/v0.12.0.zip
+#     dest: /tmp
+#     remote_src: yes
+
+- name: Wait for kube-system to be ready
+  k8s_info:
+    kind: Pod
+    namespace: kube-system
+  register: pods_output
+  retries: 20
+  delay: 45
+  until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
+
+- name: Create a k8s namespace
+  k8s:
+    name: ca-system
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Install Consul
+  helm_cli:
+    chart_ref: /tmp/consul-helm-0.12.0
+    binary_path: helm
+    state: present
+    namespace: ca-system
+    name: consul
+    values:
+      global:
+        bootstrapACLs: true
+        datacenter: kind-local-dev
+        enablePodSecurityPolicies: true
+      client:
+        enabled: false
+      dns:
+        clusterIP: 10.107.186.69
+      server:
+        storage: 1Gi
+      syncCatalog:
+        enabled: true
+        default: false
+  until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
+
+- name: Create a Service object from an inline definition
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: coredns
+        namespace: kube-system
+      data:
+        Corefile: |
+          .:53 {
+              errors
+              health
+              kubernetes cluster.local in-addr.arpa ip6.arpa {
+                pods insecure
+                upstream
+                fallthrough in-addr.arpa ip6.arpa
+              }
+              prometheus :9153
+              forward . /etc/resolv.conf
+              cache 30
+              loop
+              reload
+              loadbalance
+          }
+          service.consul:53 {
+            errors
+            forward . 10.107.186.69
+          }
+          kind-local-dev.consul:53 {
+              errors
+              cache 30
+              forward . 10.107.186.69
+          }
+          consul:53 {
+              errors
+              cache 30
+              forward . 10.34.1.250 10.34.21.250 10.34.41.250 {
+                except kind-local-dev.consul
+              }
+          }
