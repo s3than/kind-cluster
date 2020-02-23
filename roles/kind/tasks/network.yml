@@ -1,3 +1,59 @@
+- name: Download Dependency Kube Controller
+  docker_image:
+    name: calico/kube-controllers:v3.8.4
+    source: pull
+
+- name: Load Calico Kube Controller kind
+  command:
+    argv:
+    - kind
+    - load
+    - docker-image
+    - --name=clusterapi
+    - calico/kube-controllers:v3.8.4
+
+- name: Download Dependency CNI
+  docker_image:
+    name: calico/cni:v3.8.4
+    source: pull
+
+- name: Load Calico into kind
+  command:
+    argv:
+    - kind
+    - load
+    - docker-image
+    - --name=clusterapi
+    - calico/cni:v3.8.4
+
+- name: Download Dependency Node
+  docker_image:
+    name: calico/node:v3.8.4
+    source: pull
+
+- name: Load Calico Node into kind
+  command:
+    argv:
+    - kind
+    - load
+    - docker-image
+    - --name=clusterapi
+    - calico/node:v3.8.4
+
+- name: Download Dependency Felxvol
+  docker_image:
+    name: calico/pod2daemon-flexvol:v3.8.4
+    source: pull
+
+- name: Load Calico Flex into kind
+  command:
+    argv:
+    - kind
+    - load
+    - docker-image
+    - --name=clusterapi
+    - calico/pod2daemon-flexvol:v3.8.4
+
 - name: Download Calico
   get_url:
     url: https://docs.projectcalico.org/v3.8/manifests/calico.yaml
@@ -9,12 +65,20 @@
     src: /tmp/calico.yml
     state: present
 
-- name: Run kubectl set env
-  command:
-    argv:
-    - kubectl
-    - -n=kube-system
-    - set
-    - env
-    - daemonset/calico-node
-    - FELIX_IGNORELOOSERPF=true
+# - name: Run kubectl set env
+#   command:
+#     argv:
+#     - kubectl
+#     - -n=kube-system
+#     - set
+#     - env
+#     - daemonset/calico-node
+#     # - FELIX_IGNORELOOSERPF=true
+
+- name: Wait for kube-system to be ready
+  k8s_info:
+    kind: Pod
+    namespace: kube-system
+  register: pods_output
+  retries: 50
+  until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"

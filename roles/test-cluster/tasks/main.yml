@@ -1,0 +1,9 @@
+---
+- name: configure consul
+  include: consul.yml
+
+- name: configure monitoring
+  include: monitoring.yml
+
+- name: configure kubedb
+  include: kubedb.yml

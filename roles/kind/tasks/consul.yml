@@ -1,18 +1,3 @@
-# - name: Download Consul
-#   unarchive:
-#     src: https://github.com/hashicorp/consul-helm/archive/v0.12.0.zip
-#     dest: /tmp
-#     remote_src: yes
-
-- name: Wait for kube-system to be ready
-  k8s_info:
-    kind: Pod
-    namespace: kube-system
-  register: pods_output
-  retries: 20
-  delay: 45
-  until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
-
 - name: Create a k8s namespace
   k8s:
     name: ca-system
@@ -22,26 +7,42 @@
 
 - name: Install Consul
   helm_cli:
-    chart_ref: /tmp/consul-helm-0.12.0
+    chart_ref: helm_roles/consul-helm-0.16.2
     binary_path: helm
     state: present
     namespace: ca-system
     name: consul
     values:
       global:
-        bootstrapACLs: true
         datacenter: kind-local-dev
         enablePodSecurityPolicies: true
       client:
         enabled: false
       dns:
-        clusterIP: 10.107.186.69
+        clusterIP: 10.96.96.96
       server:
         storage: 1Gi
       syncCatalog:
         enabled: true
         default: false
-  until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
+
+- name: Patch the Catalog to look at the internal service for testing
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Deployment
+      metadata:
+        name: consul-consul-sync-catalog
+        namespace: ca-system
+      spec:
+        template:
+          spec:
+            containers:
+            - name: consul-sync-catalog
+              env:
+                - name: CONSUL_HTTP_ADDR
+                  value: http://consul-consul-server:8500
 
 - name: Create a Service object from an inline definition
   k8s:
@@ -56,11 +57,14 @@
         Corefile: |
           .:53 {
               errors
-              health
+              health {
+                lameduck 5s
+              }
+              ready
               kubernetes cluster.local in-addr.arpa ip6.arpa {
                 pods insecure
-                upstream
                 fallthrough in-addr.arpa ip6.arpa
+                ttl 30
               }
               prometheus :9153
               forward . /etc/resolv.conf
@@ -69,14 +73,10 @@
               reload
               loadbalance
           }
-          service.consul:53 {
-            errors
-            forward . 10.107.186.69
-          }
           kind-local-dev.consul:53 {
               errors
               cache 30
-              forward . 10.107.186.69
+              forward . 10.96.96.96
           }
           consul:53 {
               errors
@@ -85,3 +85,4 @@
                 except kind-local-dev.consul
               }
           }
+

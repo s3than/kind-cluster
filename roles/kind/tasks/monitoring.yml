@@ -19,7 +19,7 @@
     chart_ref: stable/prometheus-operator
     binary_path: helm
     update_repo_cache: true
-    chart_version: 8.2.4
+    chart_version: 8.9.2
     state: present
     namespace: ca-system
     name: ca-prometheus
@@ -30,7 +30,38 @@
     chart_ref: stable/prometheus-adapter
     binary_path: helm
     update_repo_cache: true
-    chart_version: 1.4.0
+    chart_version: 2.1.2
     state: present
     namespace: ca-system
     name: ca-prometheus-adapter
+    values:
+      logLevel: 4
+      prometheus:
+        url: http://ca-prometheus-prometheus-o-prometheus
+      rules:
+        resource:
+          cpu:
+            containerQuery: sum(rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>}[3m])) by (<<.GroupBy>>)
+            nodeQuery: sum(rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>, id='/'}[3m])) by (<<.GroupBy>>)
+            resources:
+              overrides:
+                node:
+                  resource: node
+                namespace:
+                  resource: namespace
+                pod:
+                  resource: pod
+            containerLabel: container
+          memory:
+            containerQuery: sum(container_memory_working_set_bytes{<<.LabelMatchers>>}) by (<<.GroupBy>>)
+            nodeQuery: sum(container_memory_working_set_bytes{<<.LabelMatchers>>,id='/'}) by (<<.GroupBy>>)
+            resources:
+              overrides:
+                node:
+                  resource: node
+                namespace:
+                  resource: namespace
+                pod:
+                  resource: pod
+            containerLabel: container
+          window: 3m

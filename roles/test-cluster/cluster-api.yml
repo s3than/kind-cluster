@@ -1,0 +1,76 @@
+# kubectl create -f https://github.com/kubernetes-sigs/cluster-api/releases/download/v0.2.7/cluster-api-components.yaml
+
+# kubectl create -f https://github.com/kubernetes-sigs/cluster-api-bootstrap-provider-kubeadm/releases/download/v0.1.5/bootstrap-components.yaml
+
+# kubectl create -f https://github.com/kubernetes-sigs/cluster-api-provider-docker/releases/download/v0.2.1/provider-components.yaml
+
+- name: Cluster Api Controller
+  docker_image:
+    name: us.gcr.io/k8s-artifacts-prod/cluster-api/cluster-api-controller:v0.2.7
+    source: pull
+
+- name: Load Cluster API into kind
+  command:
+    argv:
+    - kind
+    - load
+    - docker-image
+    - --name=clusterapi
+    - us.gcr.io/k8s-artifacts-prod/cluster-api/cluster-api-controller:v0.2.7
+
+- name: Cluster Api Components install
+  k8s:
+    state: present
+    definition: "{{ lookup('file', '0.2.7.cluster-api-components.yaml') }}"
+
+- name: RBAC Proxy
+  docker_image:
+    name: gcr.io/kubebuilder/kube-rbac-proxy:v0.4.0
+    source: pull
+
+- name: Load RBAC into kind
+  command:
+    argv:
+    - kind
+    - load
+    - docker-image
+    - --name=clusterapi
+    - gcr.io/kubebuilder/kube-rbac-proxy:v0.4.0
+
+- name: KubeADM Controller
+  docker_image:
+    name: us.gcr.io/k8s-artifacts-prod/capi-kubeadm/cluster-api-kubeadm-controller:v0.1.5
+    source: pull
+
+- name: Load KubeADM Controller into kind
+  command:
+    argv:
+    - kind
+    - load
+    - docker-image
+    - --name=clusterapi
+    - us.gcr.io/k8s-artifacts-prod/capi-kubeadm/cluster-api-kubeadm-controller:v0.1.5
+
+- name: Bootstrap components install
+  k8s:
+    state: present
+    definition: "{{ lookup('file', '0.1.5.bootstrap-components.yaml') }}"
+
+- name: Docker Provider
+  docker_image:
+    name: us.gcr.io/k8s-artifacts-prod/capi-docker/capd-manager:v0.2.1
+    source: pull
+
+- name: Docker Provider into kind
+  command:
+    argv:
+    - kind
+    - load
+    - docker-image
+    - --name=clusterapi
+    - us.gcr.io/k8s-artifacts-prod/capi-docker/capd-manager:v0.2.1
+
+- name: Docker Provider install
+  k8s:
+    state: present
+    definition: "{{ lookup('file', '0.2.1.provider-components.yaml') }}"

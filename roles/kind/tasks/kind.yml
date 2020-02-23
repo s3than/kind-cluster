@@ -13,7 +13,8 @@
       - kind
       - delete
       - cluster
-  when: check_cluster.stdout.find('kind') != -1
+      - --name=clusterapi
+  when: check_cluster.stdout.find('clusterapi') != -1
   register: delete_cluster
 
 - name: Start Kind Cluster
@@ -23,7 +24,7 @@
       - create
       - cluster
       - --config=kind-config.yaml
-      - --image=kindest/node:v1.14.9@sha256:00fb7d424076ed07c157eedaa3dd36bc478384c6d7635c5755746f151359320f
+      - --name=clusterapi
   args:
     chdir: "{{role_path}}/files"
 
