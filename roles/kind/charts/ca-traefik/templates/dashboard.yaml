@@ -1,0 +1,34 @@
+# Include from helper
+{{- $name := include "ca-traefik.name" . -}}
+
+# Chart variables
+{{- $chartVersion := include "ca-traefik.Version" . }}
+{{- $appVersion := include "ca-traefik.AppVersion" . }}
+
+# Release variables
+{{- $heritageName := .Release.Service }}
+{{- $releaseName := .Release.Name }}
+{{- $namespace := .Release.Namespace }}
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ $name}}-dashboard
+  namespace: {{ $namespace }}
+  labels:
+    heritage: {{ $heritageName }}
+    helm.sh/chart: {{ $name }}-{{ $chartVersion }}
+    helm.sh/release: {{ $releaseName }}
+    app.kubernetes.io/instance: {{ $releaseName }}
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/managed-by: {{ $heritageName }}
+  annotations:
+    helm.sh/hook: "post-install,post-upgrade"
+spec:
+  routes:
+  - match: Host(`traefik.forwardmlb`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+    kind: Rule
+    services:
+      - name: api@internal
+        kind: TraefikService
+  tls: {}

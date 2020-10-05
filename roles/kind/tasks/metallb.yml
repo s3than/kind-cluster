@@ -1,0 +1,51 @@
+---
+- name: Download Metallb Namespace
+  get_url:
+    url: https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/namespace.yaml
+    dest: /tmp/metallb-namespace.yml
+
+- name: Create metallb namespace
+  k8s:
+    name: metallb-system
+    state: present
+    src: /tmp/metallb-namespace.yml
+
+- name: Download Metallb
+  get_url:
+    url: https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml
+    dest: /tmp/metallb.yml
+
+- name: Create metallb
+  k8s:
+    name: metallb-system
+    state: present
+    src: /tmp/metallb.yml
+
+- name: Create a dodgy secret for metallb
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: memberlist
+        namespace: metallb-system
+      data:
+        secretkey: dGhpc2lzbm90c2VjcmV0cmVhbGx5
+
+- name: Create metallb Config
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: config
+        namespace: metallb-system
+      data:
+        config: |
+          address-pools:
+          - name: default
+            protocol: layer2
+            addresses:
+            - 172.18.255.1-172.18.255.250

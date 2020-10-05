@@ -16,10 +16,10 @@
 
 - name: Install Prometheus Operator
   helm_cli:
-    chart_ref: stable/prometheus-operator
+    chart_ref: prometheus-community/kube-prometheus-stack
     binary_path: helm
     update_repo_cache: true
-    chart_version: 8.9.2
+    chart_version: 9.4.5
     state: present
     namespace: ca-system
     name: ca-prometheus
@@ -27,17 +27,17 @@
 
 - name: Install Prometheus Adapter
   helm_cli:
-    chart_ref: stable/prometheus-adapter
+    chart_ref: prometheus-community/prometheus-adapter
     binary_path: helm
     update_repo_cache: true
-    chart_version: 2.1.2
+    chart_version: 2.7.0
     state: present
     namespace: ca-system
     name: ca-prometheus-adapter
     values:
       logLevel: 4
       prometheus:
-        url: http://ca-prometheus-prometheus-o-prometheus
+        url: http://ca-prometheus-kube-prometh-prometheus
       rules:
         resource:
           cpu:

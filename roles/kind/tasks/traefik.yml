@@ -1,0 +1,8 @@
+---
+- name: Install Traefik
+  helm_cli:
+    chart_ref: roles/kind/charts/ca-traefik
+    binary_path: helm
+    state: present
+    namespace: ca-system
+    name: ca-traefik

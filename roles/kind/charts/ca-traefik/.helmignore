@@ -1,0 +1,17 @@
+.git/
+.gitignore
+.circleci/config.yml
+.svn/
+*.swp
+.terraform/
+*.tmp
+*.tmproj
+*.vscode
+*~
+*.bak
+# you should un-comment these out after helm starter is complete
+#
+# tests/
+# scripts/
+# docs/
+# *.md
