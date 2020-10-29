@@ -1,17 +1,21 @@
 - name: Create a k8s namespace
-  k8s:
+  community.kubernetes.k8s:
     name: ca-system
     api_version: v1
     kind: Namespace
     state: present
 
-- name: Install Consul
-  helm_cli:
-    chart_ref: hashicorp/consul
-    binary_path: helm
-    state: present
-    namespace: ca-system
+# From repository
+- name: Add hashicorp chart repo
+  community.kubernetes.helm_repository:
+    name: hashicorp
+    repo_url: "https://helm.releases.hashicorp.com"
+
+- name: Deploy Consul
+  community.kubernetes.helm:
     name: consul
+    chart_ref: hashicorp/consul
+    release_namespace: ca-system
     values:
       global:
         name: consul
@@ -29,7 +33,7 @@
         addK8SNamespaceSuffix: false
 
 - name: Patch the Catalog to look at the internal service for testing
-  k8s:
+  community.kubernetes.k8s:
     state: present
     definition:
       apiVersion: v1
@@ -47,7 +51,7 @@
                   value: http://consul-server:8500
 
 - name: Create a Service object from an inline definition
-  k8s:
+  community.kubernetes.k8s:
     state: present
     definition:
       apiVersion: v1

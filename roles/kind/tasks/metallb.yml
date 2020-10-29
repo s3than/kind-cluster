@@ -1,28 +1,28 @@
 ---
 - name: Download Metallb Namespace
-  get_url:
+  ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/namespace.yaml
     dest: /tmp/metallb-namespace.yml
 
 - name: Create metallb namespace
-  k8s:
+  community.kubernetes.k8s:
     name: metallb-system
     state: present
     src: /tmp/metallb-namespace.yml
 
 - name: Download Metallb
-  get_url:
+  ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml
     dest: /tmp/metallb.yml
 
 - name: Create metallb
-  k8s:
+  community.kubernetes.k8s:
     name: metallb-system
     state: present
     src: /tmp/metallb.yml
 
 - name: Create a dodgy secret for metallb
-  k8s:
+  community.kubernetes.k8s:
     state: present
     definition:
       apiVersion: v1
@@ -34,7 +34,7 @@
         secretkey: dGhpc2lzbm90c2VjcmV0cmVhbGx5
 
 - name: Create metallb Config
-  k8s:
+  community.kubernetes.k8s:
     state: present
     definition:
       apiVersion: v1

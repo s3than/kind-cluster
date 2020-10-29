@@ -1,6 +1,6 @@
 ---
 - name: Check Cluster Exists
-  command:
+  ansible.builtin.command :
     argv:
       - kind
       - get
@@ -8,7 +8,7 @@
   register: check_cluster
 
 - name: Delete Existing Cluster
-  command:
+  ansible.builtin.command :
     argv:
       - kind
       - delete
@@ -18,7 +18,7 @@
   register: delete_cluster
 
 - name: Start Kind Cluster
-  command:
+  ansible.builtin.command :
     argv:
       - kind
       - create

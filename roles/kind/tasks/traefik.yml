@@ -1,8 +1,20 @@
----
 - name: Install Traefik
-  helm_cli:
-    chart_ref: roles/kind/charts/ca-traefik
-    binary_path: helm
-    state: present
-    namespace: ca-system
+  community.kubernetes.helm:
     name: ca-traefik
+    chart_ref: roles/kind/charts/ca-traefik
+    release_namespace: ca-system
+    values:
+      global:
+        name: consul
+        datacenter: kind-local-dev
+        enablePodSecurityPolicies: true
+      client:
+        enabled: false
+      dns:
+        clusterIP: 10.96.96.96
+      server:
+        storage: 1Gi
+      syncCatalog:
+        enabled: true
+        default: false
+        addK8SNamespaceSuffix: false

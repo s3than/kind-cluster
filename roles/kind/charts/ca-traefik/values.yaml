@@ -36,7 +36,7 @@ traefik:
   deployment:
     enabled: true
     # Number of pods of the deployment
-    replicas: 3
+    replicas: 1
     # Additional deployment annotations (e.g. for jaeger-operator sidecar injection)
     annotations: {}
     # Additional pod annotations (e.g. for mesh injection or prometheus scraping)
@@ -340,7 +340,7 @@ traefik:
   #           values:
   #           - {{ template "traefik.name" . }}
   #       topologyKey: failure-domain.beta.kubernetes.io/zone
-  nodeSelector: {}
+  nodeSelector: []
   tolerations: []
 
   # Pods can have priority.

@@ -1,5 +1,5 @@
 - name: Wait for kube-system to be ready
-  k8s_info:
+  community.kubernetes.k8s_info:
     kind: Pod
     namespace: kube-system
   register: pods_output
@@ -8,32 +8,62 @@
   until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
 
 - name: Create a k8s namespace
-  k8s:
-    name: ca-system
+  community.kubernetes.k8s:
+    name: monitoring
     api_version: v1
     kind: Namespace
     state: present
 
+- name: Get Helm repository
+  community.kubernetes.helm_repository:
+    name: prometheus-community
+    repo_url: "https://prometheus-community.github.io/helm-charts"
+
 - name: Install Prometheus Operator
-  helm_cli:
-    chart_ref: prometheus-community/kube-prometheus-stack
-    binary_path: helm
-    update_repo_cache: true
-    chart_version: 9.4.5
-    state: present
-    namespace: ca-system
+  community.kubernetes.helm:
     name: ca-prometheus
+    chart_ref: prometheus-community/kube-prometheus-stack
+    release_namespace: monitoring
+    chart_version: 9.4.5
+    values:
+      nodeExporter:
+        relabelings:
+        - action: replace
+          regex: (.*)
+          replacement: $1
+          sourceLabels:
+          - __meta_kubernetes_pod_node_name
+          targetLabel: kubernetes_node
+      kubelet:
+        metricRelabelings:
+        - action: replace
+          sourceLabels:
+          - node
+          targetLabel: instance
   until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
 
-- name: Install Prometheus Adapter
-  helm_cli:
-    chart_ref: prometheus-community/prometheus-adapter
-    binary_path: helm
-    update_repo_cache: true
-    chart_version: 2.7.0
+- name: Patch the NodeExporter for picking up hypervisor issues
+  community.kubernetes.k8s:
     state: present
-    namespace: ca-system
+    definition:
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        name: ca-prometheus-prometheus-node-exporter
+        namespace: monitoring
+      spec:
+        template:
+          spec:
+            containers:
+            - name: node-exporter
+              image: 'quay.io/prometheus/node-exporter:master'
+
+- name: Install Prometheus Adapter
+  community.kubernetes.helm:
     name: ca-prometheus-adapter
+    chart_ref: prometheus-community/prometheus-adapter
+    release_namespace: monitoring
+    chart_version: 2.7.0
     values:
       logLevel: 4
       prometheus:

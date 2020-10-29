@@ -26,7 +26,7 @@ metadata:
     helm.sh/hook: "post-install,post-upgrade"
 spec:
   routes:
-  - match: Host(`traefik.forwardmlb`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+  - match: (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
     kind: Rule
     services:
       - name: api@internal

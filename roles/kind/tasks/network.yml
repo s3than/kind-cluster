@@ -1,16 +1,16 @@
 - name: Download Calico
-  get_url:
+  ansible.builtin.get_url:
     url: https://docs.projectcalico.org/manifests/calico.yaml
     dest: /tmp/calico.yml
 
 - name: Install Calico
-  k8s:
+  community.kubernetes.k8s:
     name: calico
     src: /tmp/calico.yml
     state: present
 
 - name: Wait for kube-system to be ready
-  k8s_info:
+  community.kubernetes.k8s_info:
     kind: Pod
     namespace: kube-system
   register: pods_output

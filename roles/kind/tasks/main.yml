@@ -1,6 +1,8 @@
 ---
 - name: configure kind
   include: kind.yml
+  tags:
+    - build
 
 - name: configure network
   include: network.yml
