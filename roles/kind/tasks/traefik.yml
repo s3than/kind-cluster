@@ -1,20 +1,18 @@
+- name: Add Traefik repository
+  community.kubernetes.helm_repository:
+    name: traefik
+    repo_url: https://helm.traefik.io/traefik
+
+- name: Create a k8s namespace
+  community.kubernetes.k8s:
+    name: ingress
+    api_version: v1
+    kind: Namespace
+    state: present
+
 - name: Install Traefik
   community.kubernetes.helm:
-    name: ca-traefik
-    chart_ref: roles/kind/charts/ca-traefik
-    release_namespace: ca-system
-    values:
-      global:
-        name: consul
-        datacenter: kind-local-dev
-        enablePodSecurityPolicies: true
-      client:
-        enabled: false
-      dns:
-        clusterIP: 10.96.96.96
-      server:
-        storage: 1Gi
-      syncCatalog:
-        enabled: true
-        default: false
-        addK8SNamespaceSuffix: false
+    name: traefik
+    chart_ref: traefik/traefik
+    release_namespace: ingress
+    update_repo_cache: yes

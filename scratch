@@ -11,3 +11,21 @@ do
       alpine/socat -dd \
       tcp-listen:443,fork,reuseaddr tcp-connect:172.18.255.1:443
 done
+
+
+
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-dashboard
+  namespace: ingress
+spec:
+  routes:
+  - match: Host(`dashboard.traefik`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+    kind: Rule
+    services:
+      - name: api@internal
+        kind: TraefikService
+  tls: {}
