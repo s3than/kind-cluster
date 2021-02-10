@@ -13,18 +13,18 @@ networking:
   apiServerPort: 6443
 nodes:
   - role: control-plane
-    extraMounts:
-    - containerPath: /var/lib/kubelet/config.json
-      hostPath: /home/tcolbert/.docker/config.json
+    # extraMounts:
+    # - containerPath: /var/lib/kubelet/config.json
+    #   hostPath: /home/tcolbert/.docker/config.json
   - role: worker
-    extraMounts:
-    - containerPath: /var/lib/kubelet/config.json
-      hostPath: /home/tcolbert/.docker/config.json
+    # extraMounts:
+    # - containerPath: /var/lib/kubelet/config.json
+    #   hostPath: /home/tcolbert/.docker/config.json
   - role: worker
-    extraMounts:
-    - containerPath: /var/lib/kubelet/config.json
-      hostPath: /home/tcolbert/.docker/config.json
+    # extraMounts:
+    # - containerPath: /var/lib/kubelet/config.json
+    #   hostPath: /home/tcolbert/.docker/config.json
   - role: worker
-    extraMounts:
-    - containerPath: /var/lib/kubelet/config.json
-      hostPath: /home/tcolbert/.docker/config.json
+    # extraMounts:
+    # - containerPath: /var/lib/kubelet/config.json
+    #   hostPath: /home/tcolbert/.docker/config.json

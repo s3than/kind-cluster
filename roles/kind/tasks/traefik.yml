@@ -16,3 +16,46 @@
     chart_ref: traefik/traefik
     release_namespace: ingress
     update_repo_cache: yes
+    values:
+      ingressClass:
+        # true is not unit-testable yet, pending https://github.com/rancher/helm-unittest/pull/12
+        enabled: true
+        isDefaultClass: true
+      ingressRoute:
+        dashboard:
+          enabled: false
+
+- name: Configure dashboard for local development
+  community.kubernetes.k8s:
+    state: present
+    definition:
+      apiVersion: traefik.containo.us/v1alpha1
+      kind: IngressRoute
+      metadata:
+        name: traefik-dashboard
+        namespace: ingress
+      spec:
+        routes:
+        - match: Host(`dashboard.localdev`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+          kind: Rule
+          services:
+            - name: api@internal
+              kind: TraefikService
+        tls: {}
+
+- name: Get Traefik External IP
+  community.kubernetes.k8s_info:
+    api_version: v1
+    kind: Service
+    name: traefik
+    namespace: ingress
+  register: ingress
+
+- name: Debug
+  debug:
+    msg: "{{ ingress.resources[*].status }}"
+#  docker run --name kind-proxy-80 \
+#         --publish 0.0.0.0:80:80 \
+#         --network kind \
+#         alpine/socat -dd \
+#         tcp-listen:80,fork,reuseaddr tcp-connect:172.18.255.200:5678^
