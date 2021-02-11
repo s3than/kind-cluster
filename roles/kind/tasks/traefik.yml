@@ -36,11 +36,11 @@
         namespace: ingress
       spec:
         routes:
-        - match: Host(`dashboard.localdev`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
-          kind: Rule
-          services:
-            - name: api@internal
-              kind: TraefikService
+          - match: Host(`dashboard.test`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+            kind: Rule
+            services:
+              - name: api@internal
+                kind: TraefikService
         tls: {}
 
 - name: Get Traefik External IP
@@ -51,11 +51,32 @@
     namespace: ingress
   register: ingress
 
-- name: Debug
-  debug:
-    msg: "{{ ingress.resources[*].status }}"
-#  docker run --name kind-proxy-80 \
-#         --publish 0.0.0.0:80:80 \
-#         --network kind \
-#         alpine/socat -dd \
-#         tcp-listen:80,fork,reuseaddr tcp-connect:172.18.255.200:5678^
+- name: Start LB Proxy port 80
+  community.general.docker_container:
+    name: kind-proxy-80
+    image: alpine/socat
+    state: started
+    restart: yes
+    ports:
+      # Publish container port 80 as host port 80
+      - "0.0.0.0:80:80"
+    networks:
+      - name: kind
+    command: -dd tcp-listen:80,fork,reuseaddr tcp-connect:{{ ingress | json_query(external_ip) }}:80
+  vars:
+    external_ip: "resources[].status | [0].loadBalancer.ingress[0].ip"
+
+- name: Start LB Proxy port 443
+  community.general.docker_container:
+    name: kind-proxy-443
+    image: alpine/socat
+    state: started
+    restart: yes
+    ports:
+      # Publish container port 443 as host port 443
+      - "0.0.0.0:443:443"
+    networks:
+      - name: kind
+    command: -dd tcp-listen:443,fork,reuseaddr tcp-connect:{{ ingress | json_query(external_ip) }}:443
+  vars:
+    external_ip: "resources[].status | [0].loadBalancer.ingress[0].ip"
