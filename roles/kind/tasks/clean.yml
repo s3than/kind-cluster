@@ -1,0 +1,18 @@
+---
+- name: Check Cluster Exists
+  ansible.builtin.command :
+    argv:
+      - kind
+      - get
+      - clusters
+  register: check_cluster
+
+- name: Delete Existing Cluster
+  ansible.builtin.command :
+    argv:
+      - kind
+      - delete
+      - cluster
+      - --name=clusterapi
+  when: check_cluster.stdout.find('clusterapi') != -1
+  tags: [ 'never', 'clean' ]

@@ -1,32 +1,35 @@
 ---
+- name: clean cluster
+  include: clean.yml
+  tags:
+    - never
+    - clean
+
 - name: configure kind
   include: kind.yml
   tags:
-    - build
     - minimum
+    - network
 
 - name: configure network
   include: network.yml
   tags:
-    - update
-    - minimum
     - network
 
 - name: configure loadbalancer
   include: metallb.yml
   tags:
-    - update
-    - minimum
+    - add-features
     - loadbalancer
 
 - name: configure monitoring
   include: monitoring.yml
   tags:
-    - update
+    - add-features
     - monitoring
 
 - name: Install Traefik
   include: traefik.yml
   tags:
-    - update
+    - add-features
     - traefik

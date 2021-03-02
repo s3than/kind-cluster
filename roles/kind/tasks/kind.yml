@@ -17,14 +17,28 @@
   when: check_cluster.stdout.find('clusterapi') != -1
   register: delete_cluster
 
+- name: Create temporary build directory
+  ansible.builtin.tempfile:
+    state: directory
+    prefix: kind
+  register: kind_temp
+
+- name: Get docker config from home
+  ansible.builtin.user:
+    name: "{{ ansible_user_id }}"
+    state: present
+  register: user_registered
+
+- name: Template a kind config
+  ansible.builtin.template:
+    src: kind-config.yaml.j2
+    dest: "{{ kind_temp.path }}/kind-config.yaml"
+
 - name: Start Kind Cluster
   ansible.builtin.command :
     argv:
       - kind
       - create
       - cluster
-      - --config=kind-config.yaml
+      - --config={{ kind_temp.path }}/kind-config.yaml
       - --name=clusterapi
-  args:
-    chdir: "{{role_path}}/files"
-
