@@ -2,7 +2,7 @@
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 networking:
-{% if 'minimum' not in ansible_run_tags %}
+{% if 'cni_network' not in "" %}
   disableDefaultCNI: true
 {% endif %}
   podSubnet: 192.168.0.0/16
@@ -17,7 +17,9 @@ networking:
   apiServerPort: 6443
 nodes:
   - role: control-plane
+{% if not kubernetes_version|length %}
     image: {{ kubernetes_version }}
+{% endif %}
 {% if docker_config == True %}
     extraMounts:
     - containerPath: /var/lib/kubelet/config.json
@@ -25,7 +27,9 @@ nodes:
 {% endif %}
 {% for kind_workers in range(kind_workers) %}
   - role: worker
+{% if not kubernetes_version|length %}
     image: {{ kubernetes_version }}
+{% endif %}
 {% if docker_config == True %}
     extraMounts:
     - containerPath: /var/lib/kubelet/config.json

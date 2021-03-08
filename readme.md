@@ -2,76 +2,68 @@
 
 This cluster is designed to allow quick prototyping of k8s.
 
-## Variables
+## Dependencies
 
-| Variables     | Default | Description                                 |
-| ------------- | :-----: | ------------------------------------------- |
-| docker_config |  True   | Inject docker config from user into cluster |
-| kind_workers  |    3    | Number of Kind Worker Nodes                 |
-| external_api  |  False  | Allow access to the k8s api via 0.0.0.0     |
+* [ansible 2.9+](https://github.com/ansible/ansible)
+* [kind](https://github.com/kubernetes-sigs/kind/)
+* [docker](https://www.docker.com/)
 
 ## Features
 
-* Calico Networking
+* CNI Networking
 * metallb loadbalancers
 * Grafana and Prometheus Monitoring
 * Traefik V2, socat proxy forwarders for metallb
+* Nginx, socat proxy forwarders for metallb
+
+### Python Dependencies
+
+To ensure python dependencies.
+
+```shell
+pip3 install -r requirements.txt --user
+```
+
+### Ansible Galaxy Collection Dependencies
+
+```shell
+ansible-galaxy collection install -r requirements.yml
+```
+
+## Variables
+
+| Variables          | Default | Description                                                                                            |
+| ------------------ | :-----: | ------------------------------------------------------------------------------------------------------ |
+| cluster_reset      |  False  | This will delete and re-install the kind cluster                                                       |
+| docker_config      |  True   | Inject docker config from user into cluster                                                            |
+| kind_workers       |    3    | Number of Kind Worker Nodes                                                                            |
+| external_api       |  False  | Allow access to the k8s api via 0.0.0.0 *Security Goose says this is dangerous use at your own peril.* |
+| kubernetes_version |   ""    | Use Kind image to define k8s [image](https://github.com/kubernetes-sigs/kind/releases).                |
+| cni_network        | calico  | Set to either "" or calico for installing network                                                      |
+| metallb_enabled    |  True   | Metallb Load Balancer                                                                                  |
+| ingress_enabled    |  True   | Configure a Ingress                                                                                    |
+| ingress_type       | traefik | Nginx/Traefik                                                                                          |
 
 ## Install
 
-This will destroy a previous kind cluster and build a new one with all features
-
 ```shell
 ansible-playbook start-local-cluster.yml
 ```
 
-### Minimum Clusters
-
-Build a minimum kind cluster
+## Clean up
 
 ```shell
-ansible-playbook -t minimum start-local-cluster.yml
-```
-
-Build a minimum kind cluster with Calico networking
-
-```shell
-ansible-playbook -t network start-local-cluster.yml
-```
-
-### All Features
-
-```shell
-ansible-playbook start-local-cluster.yml
-```
-
-### Adding Features
-
-This will expect the cluster to exist
-
-```shell
-ansible-playbook start-local-cluster.yml -t add-features
-```
-
-This will use an existing cluster and configure monitoring
-
-```shell
-ansible-playbook start-local-cluster.yml -t monitoring
-```
-
-This will use an existing cluster and configure loadbalancer
-
-```shell
-ansible-playbook start-local-cluster.yml -t loadbalancer
-```
-
-This will use an existing cluster and configure traefik
-
-```shell
-ansible-playbook start-local-cluster.yml -t traefik
+ansible-playbook start-local-cluster.yml -t clean
 ```
 
 ## Todo
 
-* Add checks for add-features that cluster exists
-* Add alternative ingress, nginx
+* Add additional CNI providers.
+* Allow configuring of versions for various services, eg. ingress, monitoring.
+* Inject values into config for ingress, monitoring helm charts.
+
+## Future
+
+Outside of creating the above basic configurations no other features and or functionality is expected to be added. This project is configured to allow a flexible development environment for developing in kubernetes and allow for the environment to be destroyed and recreated quickly and easily.
+
+It is not meant for any production workloads.

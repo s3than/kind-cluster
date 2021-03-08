@@ -1,0 +1,136 @@
+- name: Install, configure, Traefik
+  block:
+    - name: Add Traefik repository
+      community.kubernetes.helm_repository:
+        name: traefik
+        repo_url: https://helm.traefik.io/traefik
+
+    - name: Install Traefik
+      community.kubernetes.helm:
+        name: traefik
+        create_namespace: yes
+        chart_ref: traefik/traefik
+        release_namespace: ingress
+        update_repo_cache: yes
+        values:
+          ingressClass:
+            # true is not unit-testable yet, pending https://github.com/rancher/helm-unittest/pull/12
+            enabled: true
+            isDefaultClass: true
+          ingressRoute:
+            dashboard:
+              enabled: false
+
+    - name: Configure dashboard for local development
+      community.kubernetes.k8s:
+        state: present
+        definition:
+          apiVersion: traefik.containo.us/v1alpha1
+          kind: IngressRoute
+          metadata:
+            name: traefik-dashboard
+            namespace: ingress
+          spec:
+            routes:
+              - match: Host(`dashboard.test`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+                kind: Rule
+                services:
+                  - name: api@internal
+                    kind: TraefikService
+            tls: {}
+
+    - name: Get External IP
+      community.kubernetes.k8s_info:
+        api_version: v1
+        kind: Service
+        name: traefik
+        namespace: ingress
+      register: ingress
+
+    - name: Start LB Proxy port 80
+      community.general.docker_container:
+        name: kind-proxy-80
+        image: alpine/socat
+        state: started
+        recreate: yes
+        ports:
+          # Publish container port 80 as host port 80
+          - "0.0.0.0:80:80"
+        networks:
+          - name: kind
+        command: -dd tcp-listen:80,fork,reuseaddr tcp-connect:{{ ingress | json_query(external_ip) }}:80
+      vars:
+        external_ip: "resources[].status | [0].loadBalancer.ingress[0].ip"
+
+    - name: Start LB Proxy port 443
+      community.general.docker_container:
+        name: kind-proxy-443
+        image: alpine/socat
+        state: started
+        recreate: yes
+        ports:
+          # Publish container port 443 as host port 443
+          - "0.0.0.0:443:443"
+        networks:
+          - name: kind
+        command: -dd tcp-listen:443,fork,reuseaddr tcp-connect:{{ ingress | json_query(external_ip) }}:443
+      vars:
+        external_ip: "resources[].status | [0].loadBalancer.ingress[0].ip"
+
+  when: ingress_type == "traefik"
+
+- name: Install, configure, Nginx
+  block:
+    - name: Add Nginx repository
+      community.kubernetes.helm_repository:
+        name: nginx
+        repo_url: https://helm.nginx.com/stable
+
+
+    - name: Install Nginx
+      community.kubernetes.helm:
+        name: nginx
+        create_namespace: yes
+        chart_ref: nginx/nginx-ingress
+        release_namespace: ingress
+        update_repo_cache: yes
+
+    - name: Get Nginx External IP
+      community.kubernetes.k8s_info:
+        api_version: v1
+        kind: Service
+        name: nginx-nginx-ingress
+        namespace: ingress
+      register: ingress
+
+    - name: Start LB Proxy port 80
+      community.general.docker_container:
+        name: kind-proxy-80
+        image: alpine/socat
+        state: started
+        recreate: yes
+        ports:
+          # Publish container port 80 as host port 80
+          - "0.0.0.0:80:80"
+        networks:
+          - name: kind
+        command: -dd tcp-listen:80,fork,reuseaddr tcp-connect:{{ ingress | json_query(external_ip) }}:80
+      vars:
+        external_ip: "resources[].status | [0].loadBalancer.ingress[0].ip"
+
+    - name: Start LB Proxy port 443
+      community.general.docker_container:
+        name: kind-proxy-443
+        image: alpine/socat
+        state: started
+        recreate: yes
+        ports:
+          # Publish container port 443 as host port 443
+          - "0.0.0.0:443:443"
+        networks:
+          - name: kind
+        command: -dd tcp-listen:443,fork,reuseaddr tcp-connect:{{ ingress | json_query(external_ip) }}:443
+      vars:
+        external_ip: "resources[].status | [0].loadBalancer.ingress[0].ip"
+
+  when: ingress_type == "nginx"

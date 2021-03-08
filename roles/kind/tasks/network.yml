@@ -1,18 +1,21 @@
-- name: Download Calico
-  ansible.builtin.get_url:
-    url: https://docs.projectcalico.org/manifests/calico.yaml
-    dest: /tmp/calico.yml
+- name: Install Calico CNI
+  block:
+    - name: Download Calico
+      ansible.builtin.get_url:
+        url: https://docs.projectcalico.org/manifests/calico.yaml
+        dest: /tmp/calico.yml
 
-- name: Install Calico
-  community.kubernetes.k8s:
-    name: calico
-    src: /tmp/calico.yml
-    state: present
+    - name: Install Calico
+      community.kubernetes.k8s:
+        name: calico
+        src: /tmp/calico.yml
+        state: present
 
-- name: Wait for kube-system to be ready
-  community.kubernetes.k8s_info:
-    kind: Pod
-    namespace: kube-system
-  register: pods_output
-  retries: 50
-  until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
+    - name: Wait for kube-system to be ready
+      community.kubernetes.k8s_info:
+        kind: Pod
+        namespace: kube-system
+      register: pods_output
+      retries: 50
+      until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
+  when: cni_network == "calico"

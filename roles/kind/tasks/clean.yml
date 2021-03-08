@@ -16,3 +16,15 @@
       - --name=clusterapi
   when: check_cluster.stdout.find('clusterapi') != -1
   tags: [ 'never', 'clean' ]
+
+- name: Clean LB Proxy port 443
+  community.general.docker_container:
+    name: kind-proxy-443
+    state: absent
+  tags: [ 'never', 'clean' ]
+
+- name: Clean LB Proxy port 80
+  community.general.docker_container:
+    name: kind-proxy-80
+    state: absent
+  tags: [ 'never', 'clean' ]

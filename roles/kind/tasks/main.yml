@@ -7,29 +7,18 @@
 
 - name: configure kind
   include: kind.yml
-  tags:
-    - minimum
-    - network
 
 - name: configure network
   include: network.yml
-  tags:
-    - network
 
 - name: configure loadbalancer
   include: metallb.yml
-  tags:
-    - add-features
-    - loadbalancer
+  when: metallb_enabled == True
+
+- name: Install Ingress
+  include: ingress.yml
+  when: metallb_enabled == True and ingress_enabled == True
 
 - name: configure monitoring
   include: monitoring.yml
-  tags:
-    - add-features
-    - monitoring
-
-- name: Install Traefik
-  include: traefik.yml
-  tags:
-    - add-features
-    - traefik
+  when: monitoring_enabled == True

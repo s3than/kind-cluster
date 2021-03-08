@@ -14,8 +14,16 @@
       - delete
       - cluster
       - --name=clusterapi
-  when: check_cluster.stdout.find('clusterapi') != -1
+  when: check_cluster.stdout.find('clusterapi') != -1 and cluster_reset == "True"
   register: delete_cluster
+
+- name: Check Cluster Exists
+  ansible.builtin.command :
+    argv:
+      - kind
+      - get
+      - clusters
+  register: check_cluster
 
 - name: Create temporary build directory
   ansible.builtin.tempfile:
@@ -42,3 +50,4 @@
       - cluster
       - --config={{ kind_temp.path }}/kind-config.yaml
       - --name=clusterapi
+  when: check_cluster.stdout.find('clusterapi') == -1

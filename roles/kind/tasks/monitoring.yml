@@ -7,13 +7,6 @@
   delay: 45
   until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
 
-- name: Create a k8s namespace
-  community.kubernetes.k8s:
-    name: monitoring
-    api_version: v1
-    kind: Namespace
-    state: present
-
 - name: Get Helm repository
   community.kubernetes.helm_repository:
     name: prometheus-community
@@ -24,7 +17,9 @@
     name: ca-prometheus
     chart_ref: prometheus-community/kube-prometheus-stack
     release_namespace: monitoring
-    chart_version: 9.4.5
+    chart_version: 13.13.1
+    create_namespace: yes
+    update_repo_cache: yes
     values:
       nodeExporter:
         relabelings:
@@ -41,57 +36,3 @@
           - node
           targetLabel: instance
   until: "pods_output | json_query('resources[*].status.containerStatuses[?ready == `false`][].ready | contains(@, `false`)') != true"
-
-- name: Patch the NodeExporter for picking up hypervisor issues
-  community.kubernetes.k8s:
-    state: present
-    definition:
-      apiVersion: apps/v1
-      kind: DaemonSet
-      metadata:
-        name: ca-prometheus-prometheus-node-exporter
-        namespace: monitoring
-      spec:
-        template:
-          spec:
-            containers:
-            - name: node-exporter
-              image: 'quay.io/prometheus/node-exporter:master'
-
-- name: Install Prometheus Adapter
-  community.kubernetes.helm:
-    name: ca-prometheus-adapter
-    chart_ref: prometheus-community/prometheus-adapter
-    release_namespace: monitoring
-    chart_version: 2.7.0
-    values:
-      logLevel: 4
-      prometheus:
-        url: http://ca-prometheus-kube-prometh-prometheus
-      rules:
-        resource:
-          cpu:
-            containerQuery: sum(rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>}[3m])) by (<<.GroupBy>>)
-            nodeQuery: sum(rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>, id='/'}[3m])) by (<<.GroupBy>>)
-            resources:
-              overrides:
-                node:
-                  resource: node
-                namespace:
-                  resource: namespace
-                pod:
-                  resource: pod
-            containerLabel: container
-          memory:
-            containerQuery: sum(container_memory_working_set_bytes{<<.LabelMatchers>>}) by (<<.GroupBy>>)
-            nodeQuery: sum(container_memory_working_set_bytes{<<.LabelMatchers>>,id='/'}) by (<<.GroupBy>>)
-            resources:
-              overrides:
-                node:
-                  resource: node
-                namespace:
-                  resource: namespace
-                pod:
-                  resource: pod
-            containerLabel: container
-          window: 3m

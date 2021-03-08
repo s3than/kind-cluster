@@ -1,7 +1,7 @@
 ---
 - name: Download Metallb Namespace
   ansible.builtin.get_url:
-    url: https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/namespace.yaml
+    url: https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/namespace.yaml
     dest: /tmp/metallb-namespace.yml
 
 - name: Create metallb namespace
@@ -12,7 +12,7 @@
 
 - name: Download Metallb
   ansible.builtin.get_url:
-    url: https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml
+    url: https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/metallb.yaml
     dest: /tmp/metallb.yml
 
 - name: Create metallb
@@ -33,6 +33,11 @@
       data:
         secretkey: dGhpc2lzbm90c2VjcmV0cmVhbGx5
 
+- name: Get kind network CIDR
+  community.docker.docker_network_info:
+    name: kind
+  register: networkCIDR
+
 - name: Create metallb Config
   community.kubernetes.k8s:
     state: present
@@ -48,4 +53,5 @@
           - name: default
             protocol: layer2
             addresses:
-            - 172.18.255.200-172.18.255.250
+            - {{ networkCIDR.network.IPAM.Config[0].Subnet | ansible.netcommon.nthhost(-10) }}-{{ networkCIDR.network.IPAM.Config[0].Subnet | ansible.netcommon.nthhost(-1) }}
+

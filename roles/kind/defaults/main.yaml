@@ -1,3 +1,6 @@
+# This will delete and re-install the kind cluster
+cluster_reset: False
+
 # Inject the docker config to the nodes
 docker_config: True
 
@@ -7,4 +10,18 @@ kind_workers: 3
 # Allow the api to be accessed via 0.0.0.0
 external_api: False
 
-kubernetes_version: kindest/node:v1.19.7@sha256:a70639454e97a4b733f9d9b67e12c01f6b0297449d5b9cbbef87473458e26dca
+# kubernetes_version: kindest/node:v1.19.7@sha256:a70639454e97a4b733f9d9b67e12c01f6b0297449d5b9cbbef87473458e26dca
+# Leaving blank will configure the default for the kind version.
+kubernetes_version: ""
+
+# Set to either ""|calico for installing network
+cni_network: calico
+
+# Metallb Load Balancer
+metallb_enabled: True
+
+# Ingress enabled
+ingress_enabled: True
+
+# Nginx/Traefik
+ingress_type: traefik
