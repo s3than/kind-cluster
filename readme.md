@@ -1,6 +1,8 @@
-# TEST Cluster
+# Kind Ansible Cluster
 
 This cluster is designed to allow quick prototyping of k8s.
+
+It is deployed and configured using Ansible to allow a number of base level configurations.
 
 ## Dependencies
 
@@ -62,6 +64,7 @@ ansible-playbook start-local-cluster.yml -t clean
 * Add additional CNI providers.
 * Allow configuring of versions for various services, eg. ingress, monitoring.
 * Inject values into config for ingress, monitoring helm charts.
+* Make configuration more plugable.
 
 ## Future
 
