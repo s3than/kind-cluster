@@ -43,6 +43,7 @@ ansible-galaxy collection install -r requirements.yml
 | metallb_enabled    |  True   | Metallb Load Balancer                                                                                  |
 | ingress_enabled    |  True   | Configure a Ingress                                                                                    |
 | ingress_type       | traefik | Nginx/Traefik                                                                                          |
+| monitoring_enabled |  False  | Prometheus installation for testing monitoring                                                         |
 
 ## Install
 

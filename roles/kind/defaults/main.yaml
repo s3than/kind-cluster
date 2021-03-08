@@ -25,3 +25,6 @@ ingress_enabled: True
 
 # Nginx/Traefik
 ingress_type: traefik
+
+# Configure Prometheus
+monitoring_enabled: False
