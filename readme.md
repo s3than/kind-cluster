@@ -54,6 +54,8 @@ ansible-galaxy collection install -r requirements.yml
 ansible-playbook start-local-cluster.yml
 ```
 
+![cli-example](kind-cluster.gif)
+
 ## Clean up
 
 ```shell
