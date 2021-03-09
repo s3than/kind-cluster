@@ -8,6 +8,7 @@ It is deployed and configured using Ansible to allow a number of base level conf
 
 * [ansible 2.9+](https://github.com/ansible/ansible)
 * [kind](https://github.com/kubernetes-sigs/kind/)
+* [helm3](https://helm.sh/docs/intro/install/)
 * [docker](https://www.docker.com/)
 
 ## Features
