@@ -2,7 +2,7 @@
 cluster_reset: False
 
 # Inject the docker config to the nodes
-docker_config: True
+docker_config: False
 
 # Number of kind workers to deploy
 kind_workers: 3
@@ -15,13 +15,13 @@ external_api: False
 kubernetes_version: ""
 
 # Set to either ""|calico for installing network
-cni_network: calico
+cni_network: #  calico
 
 # Metallb Load Balancer
-metallb_enabled: True
+metallb_enabled: False
 
 # Ingress enabled
-ingress_enabled: True
+ingress_enabled: False
 
 # Nginx/Traefik
 ingress_type: traefik
